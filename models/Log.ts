@@ -7,6 +7,7 @@ export interface ILog extends Document {
   duration: number;
   machineId: string;
   billingAmount: number;
+  /** Base64 data URL of login capture, copied from Session */
   imageUrl: string;
   eventType: string;
   createdAt: Date;

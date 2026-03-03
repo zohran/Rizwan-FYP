@@ -39,7 +39,7 @@ export default function ClientLoginPage() {
         const saveRes = await fetch('/api/auth/save-login-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64 }) });
         const saveJson = await saveRes.json();
         if (!saveRes.ok) { await fetch('/api/auth/logout', { method: 'POST' }); setError(saveJson.error ?? 'Failed to save login image.'); setLoading(false); return; }
-        if (saveJson.imagePath && typeof window !== 'undefined') sessionStorage.setItem(LOGIN_IMAGE_KEY, saveJson.imagePath);
+        if (saveJson.imageBase64 && typeof window !== 'undefined') sessionStorage.setItem(LOGIN_IMAGE_KEY, saveJson.imageBase64);
       } catch {
         await fetch('/api/auth/logout', { method: 'POST' });
         setError('Camera access denied. Session blocked.');

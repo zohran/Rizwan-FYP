@@ -56,11 +56,11 @@ export default function ClientDashboardPage() {
   async function startSession(duration: number) {
     setWebcamError(null); setIsStarting(true);
     try {
-      let imageUrl = ''; const stored = typeof window !== 'undefined' ? sessionStorage.getItem('clientLoginImage') : null;
-      if (stored) { imageUrl = stored; } else {
-        try { const b64 = await captureWebcam(); const sr = await fetch('/api/auth/save-login-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: b64 }) }); const sj = await sr.json(); if (sr.ok && sj.imagePath) { imageUrl = sj.imagePath; sessionStorage.setItem('clientLoginImage', sj.imagePath); } else throw new Error('Failed'); } catch { setWebcamError('Camera access denied. Session blocked.'); setIsStarting(false); return; }
+      let imageBase64 = ''; const stored = typeof window !== 'undefined' ? sessionStorage.getItem('clientLoginImage') : null;
+      if (stored) { imageBase64 = stored; } else {
+        try { const b64 = await captureWebcam(); const sr = await fetch('/api/auth/save-login-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: b64 }) }); const sj = await sr.json(); if (sr.ok && sj.imageBase64) { imageBase64 = sj.imageBase64; sessionStorage.setItem('clientLoginImage', sj.imageBase64); } else throw new Error('Failed'); } catch { setWebcamError('Camera access denied. Session blocked.'); setIsStarting(false); return; }
       }
-      const res = await fetch('/api/sessions/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ duration, machineId: `client-${Date.now()}`, imageUrl }) });
+      const res = await fetch('/api/sessions/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ duration, machineId: `client-${Date.now()}`, imageBase64 }) });
       const data = await res.json(); if (!res.ok) { setWebcamError(data.error ?? 'Failed to start session'); setIsStarting(false); return; }
       setSession(data.session); setShowDurationModal(false);
     } finally { setIsStarting(false); }

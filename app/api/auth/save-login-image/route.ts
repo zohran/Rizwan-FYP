@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 import { getAuth } from '@/lib/get-auth';
 import { saveLoginImageSchema } from '@/lib/validation';
 import { apiError, apiValidationError } from '@/lib/api-response';
 
-/** Accepts base64 data URL (e.g. data:image/jpeg;base64,...) and saves to public/logins/timestamp.png */
+/**
+ * Validates base64 image data and returns it for storage in sessionStorage.
+ * The image is stored in the Session document when /api/sessions/start is called.
+ * No file system storage - image is persisted as base64 in the database.
+ */
 export async function POST(request: NextRequest) {
   try {
     const auth = await getAuth();
@@ -21,26 +23,12 @@ export async function POST(request: NextRequest) {
 
     const imageBase64 = (body.imageBase64 ?? body.image ?? '').toString();
 
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    const timestamp = Date.now();
-    const filename = `${timestamp}.png`;
-    const logsDir = path.join(process.cwd(), 'public', 'logins');
-
-    await mkdir(logsDir, { recursive: true });
-
-    const filePath = path.join(logsDir, filename);
-    await writeFile(filePath, buffer);
-
-    const imagePath = `/logins/${filename}`;
-
     return NextResponse.json({
       success: true,
-      imagePath,
+      imageBase64,
     });
   } catch (err) {
     console.error('Save login image error:', err);
-    return apiError('Failed to save image', 500);
+    return apiError('Failed to validate image', 500);
   }
 }

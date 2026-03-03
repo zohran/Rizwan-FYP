@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return apiValidationError(parsed.error.flatten(), 400);
     }
 
-    const { duration, machineId, imageUrl } = parsed.data;
+    const { duration, machineId, imageBase64 } = parsed.data;
 
     if (!ALLOWED_DURATIONS.includes(duration as 30 | 60 | 90)) {
       return NextResponse.json(
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     const session = await Session.create({
       userId: auth.userId,
       machineId,
-      imageUrl: imageUrl ?? '',
+      imageUrl: imageBase64 ?? '',
       startTime,
       endTime,
       selectedDuration: duration,

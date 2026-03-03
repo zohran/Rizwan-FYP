@@ -5,6 +5,7 @@ export type SessionStatus = 'active' | 'ended' | 'terminated';
 export interface ISession extends Document {
   userId: mongoose.Types.ObjectId;
   machineId: string;
+  /** Base64 data URL (e.g. data:image/png;base64,...) of login capture, stored in DB */
   imageUrl: string;
   startTime: Date;
   endTime: Date;
@@ -20,7 +21,7 @@ const SessionSchema = new Schema<ISession>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     machineId: { type: String, required: true },
-    imageUrl: { type: String, default: '' },
+    imageUrl: { type: String, default: '' }, // base64 data URL
     startTime: { type: Date, required: true },
     endTime: { type: Date, required: true },
     selectedDuration: { type: Number, required: true },

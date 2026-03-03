@@ -6,6 +6,7 @@
     "node": ">=20.9.0"
   },
   "scripts": {
+    "setup:next-cache": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-next-cache.ps1",
     "dev": "tsx server.ts",
     "build": "next build",
     "start": "tsx server.ts",

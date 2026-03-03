@@ -38,9 +38,6 @@ yarn-error.log*
 # vercel
 .vercel
 
-# login snapshots (user webcam captures)
-public/logins/
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -5,12 +5,14 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required').max(256),
 });
 
+const MAX_IMAGE_BASE64 = 5 * 1024 * 1024; // 5MB for base64 data URL
+
 export const startSessionSchema = z.object({
   duration: z.number().refine((d) => [30, 60, 90].includes(d), {
     message: 'Duration must be 30, 60, or 90 minutes',
   }),
   machineId: z.string().min(1, 'Machine ID is required').max(200),
-  imageUrl: z.string().max(2048).optional(),
+  imageBase64: z.string().max(MAX_IMAGE_BASE64).optional(),
 });
 
 export const updateRateSchema = z.object({
