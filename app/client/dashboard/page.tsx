@@ -2,9 +2,11 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Card, Typography, Space, Modal, Alert, Spin, Row, Col } from 'antd';
+import { Button, Card, Typography, Space, Modal, Alert, Spin, Row, Col, Badge, notification } from 'antd';
+import { DollarOutlined } from '@ant-design/icons';
 import { useSocket } from '@/hooks/use-socket';
 import { SessionTimer } from '@/components/session-timer';
+import Link from 'next/link';
 
 const { Title, Text } = Typography;
 
@@ -28,7 +30,14 @@ export default function ClientDashboardPage() {
 
   useEffect(() => { fetchSession(); }, [fetchSession]);
   useEffect(() => { if (!session) return; const i = setInterval(fetchSession, 30000); return () => clearInterval(i); }, [session, fetchSession]);
-  useEffect(() => { if (!socket) return; socket.on('session_terminate', () => { router.push('/client/login'); router.refresh(); }); return () => socket.off('session_terminate'); }, [socket, router]);
+  useEffect(() => {
+    if (!socket) return;
+    socket.on('session_terminate', () => { router.push('/client/login'); router.refresh(); });
+    socket.on('payment_notification', (payload: { message: string; amount: number }) => {
+      notification.info({ message: 'Payment Request', description: payload.message, icon: <DollarOutlined style={{ color: '#4fd1c5' }} />, placement: 'topRight', duration: 8 });
+    });
+    return () => { socket.off('session_terminate'); socket.off('payment_notification'); };
+  }, [socket, router]);
   useEffect(() => {
     if (!session) return;
     const i = setInterval(() => { setSession((p) => { if (!p || p.remainingTime <= 0) return p; if (p.remainingTime <= 300 && !showWarning) setShowWarning(true); return { ...p, remainingTime: p.remainingTime - 1 }; }); }, 1000);
@@ -76,14 +85,17 @@ export default function ClientDashboardPage() {
               </Col>
             ))}
           </Row>
-          <Button
-            type="text"
-            block
-            style={{ marginTop: 16, color: '#999' }}
-            onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); router.push('/client/login'); router.refresh(); }}
-          >
-            Logout
-          </Button>
+          <Space direction="vertical" style={{ width: '100%', marginTop: 16 }}>
+            <Link href="/client/billing"><Button block icon={<DollarOutlined />}>View My Billing</Button></Link>
+            <Button
+              type="text"
+              block
+              style={{ color: '#999' }}
+              onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); router.push('/client/login'); router.refresh(); }}
+            >
+              Logout
+            </Button>
+          </Space>
         </Card>
       </div>
     );
@@ -103,6 +115,11 @@ export default function ClientDashboardPage() {
       <Text style={{ color: 'rgba(255,255,255,0.4)', marginTop: 24 }}>
         Started {formatDateTime(session.startTime)} &middot; {session.machineId}
       </Text>
+      <Link href="/client/billing">
+        <Button type="link" icon={<DollarOutlined />} style={{ color: '#4fd1c5', marginTop: 12 }}>
+          View My Billing
+        </Button>
+      </Link>
       {showWarning && <Alert message="5 minutes remaining — session ends automatically" type="warning" showIcon style={{ marginTop: 24, maxWidth: 380 }} />}
       <Button danger type="primary" size="large" onClick={handleEndSession} style={{ marginTop: 32, width: 280, height: 48 }}>
         End Session

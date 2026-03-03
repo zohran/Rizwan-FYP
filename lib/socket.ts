@@ -34,4 +34,5 @@ export const SOCKET_EVENTS = {
   SESSION_TERMINATE: 'session_terminate',
   BILLING_UPDATE: 'billing_update',
   ALERT_CREATE: 'alert_create',
+  PAYMENT_NOTIFICATION: 'payment_notification',
 } as const;

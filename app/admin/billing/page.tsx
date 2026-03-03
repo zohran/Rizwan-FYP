@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Card, Table, Row, Col, Statistic, InputNumber, Button, Input, Select, DatePicker, Space, Typography } from 'antd';
+import { Card, Table, Row, Col, Statistic, InputNumber, Button, Input, Select, Space, Typography, Modal, message } from 'antd';
+import { DollarOutlined, SendOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Title, Text } = Typography;
@@ -26,6 +27,9 @@ export default function BillingPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [updatingRate, setUpdatingRate] = useState(false);
+  const [sendingNotif, setSendingNotif] = useState<string | null>(null);
+  const [notifyAllModal, setNotifyAllModal] = useState<{ userId: string; username: string } | null>(null);
+  const [sendingAll, setSendingAll] = useState(false);
 
   const fetchUsers = useCallback(async () => { const res = await fetch('/api/admin/users'); if (res.ok) { const d = await res.json(); setUsers(d.users ?? []); } }, []);
 
@@ -54,18 +58,71 @@ export default function BillingPage() {
     setUpdatingRate(false);
   }
 
+  async function sendSessionNotification(billingId: string, userId: string) {
+    setSendingNotif(billingId);
+    const res = await fetch('/api/admin/send-payment-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, billingId }) });
+    if (res.ok) message.success('Payment notification sent');
+    else message.error('Failed to send notification');
+    setSendingNotif(null);
+  }
+
+  async function sendAllNotification(userId: string) {
+    setSendingAll(true);
+    const res = await fetch('/api/admin/send-payment-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) });
+    if (res.ok) message.success('Total balance notification sent');
+    else message.error('Failed to send notification');
+    setSendingAll(false);
+    setNotifyAllModal(null);
+  }
+
   const columns: ColumnsType<Billing> = [
     { title: 'User', key: 'user', render: (_: unknown, r: Billing) => <Text strong>{r.userId?.username ?? 'N/A'}</Text> },
     { title: 'Minutes', dataIndex: 'totalMinutes', key: 'minutes' },
     { title: 'Rate/min', key: 'rate', render: (_: unknown, r: Billing) => `$${r.ratePerMinute.toFixed(2)}` },
     { title: 'Amount', key: 'amount', render: (_: unknown, r: Billing) => <Text strong style={{ color: '#38a169' }}>${r.totalAmount.toFixed(2)}</Text> },
     { title: 'Date', dataIndex: 'createdAt', key: 'date', responsive: ['md'], render: (v: string) => new Date(v).toLocaleString() },
+    {
+      title: 'Notify',
+      key: 'notify',
+      width: 140,
+      render: (_: unknown, r: Billing) => (
+        <Space>
+          <Button
+            size="small"
+            icon={<SendOutlined />}
+            loading={sendingNotif === r._id}
+            onClick={() => sendSessionNotification(r._id, r.userId?._id)}
+            title="Send payment notification for this session"
+          >
+            Session
+          </Button>
+        </Space>
+      ),
+    },
   ];
 
   return (
     <div className="animate-fade-in">
-      <Title level={3}>Billing</Title>
-      <Text type="secondary">Manage rates, filter records, and view earnings</Text>
+      <Row justify="space-between" align="middle">
+        <Col>
+          <Title level={3}>Billing</Title>
+          <Text type="secondary">Manage rates, filter records, send payment notifications</Text>
+        </Col>
+        <Col>
+          <Select
+            placeholder="Notify user for all sessions"
+            style={{ width: 260 }}
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            options={users.map((u) => ({ value: u._id, label: u.username }))}
+            onSelect={(val: string) => {
+              const u = users.find((x) => x._id === val);
+              if (u) setNotifyAllModal({ userId: u._id, username: u.username });
+            }}
+          />
+        </Col>
+      </Row>
 
       <Row gutter={[24, 24]} style={{ marginTop: 24, marginBottom: 24 }}>
         <Col xs={24} sm={8}><Card><Statistic title="Total Earnings" value={totalEarnings} precision={2} prefix="$" valueStyle={{ color: '#38a169' }} /></Card></Col>
@@ -89,22 +146,10 @@ export default function BillingPage() {
 
       <Card title="Filters" style={{ marginBottom: 24 }}>
         <Space wrap size="middle">
-          <div>
-            <div><Text type="secondary" style={{ fontSize: 12 }}>Start Date</Text></div>
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ width: 160 }} />
-          </div>
-          <div>
-            <div><Text type="secondary" style={{ fontSize: 12 }}>End Date</Text></div>
-            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ width: 160 }} />
-          </div>
-          <div>
-            <div><Text type="secondary" style={{ fontSize: 12 }}>User</Text></div>
-            <Select value={selectedUserId || undefined} onChange={(v) => setSelectedUserId(v ?? '')} allowClear placeholder="All users" style={{ width: 160 }} options={users.map((u) => ({ value: u._id, label: u.username }))} />
-          </div>
-          <div>
-            <div><Text type="secondary" style={{ fontSize: 12 }}>Search</Text></div>
-            <Input.Search value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search username..." style={{ width: 200 }} allowClear />
-          </div>
+          <div><div><Text type="secondary" style={{ fontSize: 12 }}>Start Date</Text></div><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ width: 160 }} /></div>
+          <div><div><Text type="secondary" style={{ fontSize: 12 }}>End Date</Text></div><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ width: 160 }} /></div>
+          <div><div><Text type="secondary" style={{ fontSize: 12 }}>User</Text></div><Select value={selectedUserId || undefined} onChange={(v) => setSelectedUserId(v ?? '')} allowClear placeholder="All users" style={{ width: 160 }} options={users.map((u) => ({ value: u._id, label: u.username }))} /></div>
+          <div><div><Text type="secondary" style={{ fontSize: 12 }}>Search</Text></div><Input.Search value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search username..." style={{ width: 200 }} allowClear /></div>
         </Space>
       </Card>
 
@@ -117,6 +162,22 @@ export default function BillingPage() {
           pagination={{ current: page, total, pageSize: 20, onChange: (p) => setPage(p), showSizeChanger: false }}
         />
       </Card>
+
+      <Modal
+        title="Send Total Balance Notification"
+        open={!!notifyAllModal}
+        onCancel={() => setNotifyAllModal(null)}
+        onOk={() => notifyAllModal && sendAllNotification(notifyAllModal.userId)}
+        confirmLoading={sendingAll}
+        okText="Send Notification"
+      >
+        {notifyAllModal && (
+          <div>
+            <p>Send a payment notification to <strong>{notifyAllModal.username}</strong> for their <strong>total balance across all sessions</strong>?</p>
+            <p style={{ marginTop: 8, color: '#999' }}>The client will receive a real-time notification with the total amount due.</p>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
