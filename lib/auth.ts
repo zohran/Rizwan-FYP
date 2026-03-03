@@ -59,7 +59,7 @@ export function clearAuthCookie(): string {
   });
 }
 
-export function parseCookies(cookieHeader: string): Record<string, string> {
+export function parseCookies(cookieHeader: string): Record<string, string | undefined> {
   return parse(cookieHeader ?? '');
 }
 
