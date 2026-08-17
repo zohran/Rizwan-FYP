@@ -4,6 +4,7 @@ import { Layout, Menu } from 'antd';
 import { DashboardOutlined, DollarOutlined, AlertOutlined, FileTextOutlined, LogoutOutlined } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
 import type { MenuProps } from 'antd';
+import { AdminAlertToasts } from '@/components/admin-alert-toasts';
 
 const { Sider, Content } = Layout;
 
@@ -61,6 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </Content>
       </Layout>
+      <AdminAlertToasts />
     </Layout>
   );
 }

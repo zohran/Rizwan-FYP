@@ -41,6 +41,8 @@ export async function GET() {
         duration: s.selectedDuration,
         remainingTime: remainingSeconds,
         liveBilling,
+        networkViolations: s.networkViolations ?? 0,
+        lastViolationRule: s.lastViolationRule ?? '',
       };
     });
 

@@ -13,6 +13,9 @@ export interface ISession extends Document {
   remainingTime: number;
   status: SessionStatus;
   billingAmount: number;
+  networkViolations: number;
+  lastViolationAt: Date | null;
+  lastViolationRule: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,6 +35,9 @@ const SessionSchema = new Schema<ISession>(
       default: 'active',
     },
     billingAmount: { type: Number, default: 0 },
+    networkViolations: { type: Number, default: 0 },
+    lastViolationAt: { type: Date, default: null },
+    lastViolationRule: { type: String, default: '' },
   },
   { timestamps: true }
 );

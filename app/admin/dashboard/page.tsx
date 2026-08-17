@@ -18,6 +18,8 @@ type Session = {
   duration: number;
   remainingTime: number;
   liveBilling: number;
+  networkViolations: number;
+  lastViolationRule: string;
 };
 
 export default function AdminDashboardPage() {
@@ -48,9 +50,11 @@ export default function AdminDashboardPage() {
     const onUpdate = () => fetchSessions();
     socket.on('session_start', onUpdate);
     socket.on('billing_update', onUpdate);
+    socket.on('alert_create', onUpdate);
     return () => {
       socket.off('session_start', onUpdate);
       socket.off('billing_update', onUpdate);
+      socket.off('alert_create', onUpdate);
     };
   }, [socket, fetchSessions]);
 
@@ -107,6 +111,18 @@ export default function AdminDashboardPage() {
       render: (v: number) => <Tag color="orange">{formatTime(v)}</Tag>,
     },
     {
+      title: 'Policy',
+      key: 'policy',
+      render: (_: unknown, record: Session) =>
+        record.networkViolations > 0 ? (
+          <Tag color="magenta">
+            {record.networkViolations} violation{record.networkViolations === 1 ? '' : 's'}
+          </Tag>
+        ) : (
+          <Tag>Clean</Tag>
+        ),
+    },
+    {
       title: 'Billing',
       dataIndex: 'liveBilling',
       key: 'liveBilling',
@@ -160,6 +176,16 @@ export default function AdminDashboardPage() {
               prefix="$"
               loading={loading}
               valueStyle={{ color: '#38a169' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="Policy Violations"
+              value={sessions.reduce((n, s) => n + (s.networkViolations ?? 0), 0)}
+              loading={loading}
+              valueStyle={{ color: sessions.some((s) => s.networkViolations > 0) ? '#c41d7f' : undefined }}
             />
           </Card>
         </Col>

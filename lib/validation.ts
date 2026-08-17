@@ -23,6 +23,10 @@ export const terminateSessionSchema = z.object({
   sessionId: z.string().min(1, 'Session ID is required'),
 });
 
+export const networkViolationSchema = z.object({
+  ruleId: z.string().min(1, 'Rule ID is required').max(80),
+});
+
 export const markAlertReadSchema = z.object({
   alertId: z.string().optional(),
   markAllRead: z.boolean().optional(),
